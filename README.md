@@ -1,5 +1,5 @@
 # treenode
-The most annoying thing to do with the solution is generating and displaying binary trees.
+The most annoying thing to do with solving leetcode's TreeNode problems is generating and displaying binary trees.
 This package is set of functions is designed to help solve problems with binary trees. 
 
 Example:
