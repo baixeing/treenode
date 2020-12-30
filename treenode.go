@@ -229,10 +229,6 @@ func NewFromPrePost(preorder, postorder []int) *TreeNode {
 }
 
 func newRandom(depth, min, max, p int, bst bool) *TreeNode {
-	// depth: depth of binary tree
-	// min, max: etc
-	// p: nil-node probability
-	// bst: generate binary search tree
 	if depth == 0 {
 		return nil
 	}
