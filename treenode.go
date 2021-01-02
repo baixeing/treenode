@@ -3,8 +3,10 @@
 package treenode
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"time"
 )
@@ -17,7 +19,10 @@ const (
 )
 
 var (
-	r *rand.Rand
+	r                 *rand.Rand
+	ErrNilTreeNode    = errors.New("nil tree")
+	ErrDuplicateValue = errors.New("duplicate value")
+	ErrMissingValue   = errors.New("missing value")
 )
 
 func init() {
@@ -128,6 +133,154 @@ func (t *TreeNode) IsEqual(other *TreeNode) bool {
 	}
 
 	return t.Left.IsEqual(other.Left) && t.Right.IsEqual(other.Right)
+}
+
+// Insert inserts value to tree, returns ErrNilTreeNode if t == nil,
+// ErrDuplicateValue if val already in tree, nil if value was added to tree
+func (t *TreeNode) Insert(val int) error {
+	if t == nil {
+		return ErrNilTreeNode
+	}
+
+	if val > t.Val {
+		if t.Right == nil {
+			t.Right = &TreeNode{Val: val}
+			return nil
+		}
+		return t.Right.Insert(val)
+	}
+
+	if val < t.Val {
+		if t.Left == nil {
+			t.Left = &TreeNode{Val: val}
+			return nil
+		}
+		return t.Left.Insert(val)
+	}
+
+	return ErrDuplicateValue
+}
+
+// Search returns node with val in binary tree, otherwise nil
+func (t *TreeNode) Search(val int) *TreeNode {
+	if t == nil {
+		return nil
+	}
+
+	if val == t.Val {
+		return t
+	}
+
+	if left := t.Left.Search(val); left != nil {
+		return left
+	}
+
+	if right := t.Right.Search(val); right != nil {
+		return right
+	}
+
+	return nil
+}
+
+// SearchBST returns node with val in binary search tree, otherwise nil
+func (t *TreeNode) SearchBST(val int) *TreeNode {
+	if t == nil {
+		return nil
+	}
+
+	if val > t.Val {
+		return t.Right.SearchBST(val)
+	}
+
+	if val < t.Val {
+		return t.Left.SearchBST(val)
+	}
+	return t
+}
+
+// Remove removes node in binary tree, returns ErrMissingValue if value not in tree,
+// otherwise nil
+// [WARN][BUG] not fully tested
+func (t *TreeNode) Remove(val int) error {
+	if t == nil {
+		return ErrMissingValue
+	}
+
+	if val == t.Val {
+		inorder := append(t.Left.Inorder(), t.Right.Inorder()...)
+		preorder := append(t.Left.Preorder(), t.Right.Preorder()...)
+		*t = *NewFromInPre(inorder, preorder)
+
+		return nil
+	}
+
+	if t.Left != nil && val == t.Left.Val {
+		inorder := append(t.Left.Left.Inorder(), t.Left.Right.Inorder()...)
+		preorder := append(t.Left.Left.Preorder(), t.Left.Right.Preorder()...)
+
+		t.Left = NewFromInPre(inorder, preorder)
+
+		return nil
+	}
+
+	if t.Right != nil && val == t.Right.Val {
+		inorder := append(t.Right.Left.Inorder(), t.Right.Right.Inorder()...)
+		preorder := append(t.Right.Left.Preorder(), t.Right.Right.Preorder()...)
+
+		t.Right = NewFromInPre(inorder, preorder)
+
+		return nil
+	}
+
+	if t.Left.Remove(val) == nil {
+		return nil
+	}
+
+	if t.Right.Remove(val) == nil {
+		return nil
+	}
+
+	return ErrMissingValue
+}
+
+// Rebalance returns balanced binary search tree from t
+func (t *TreeNode) Rebalance() *TreeNode {
+	xs := t.Inorder()
+	sort.Ints(xs)
+	xs = dedup(xs)
+
+	return New(xs)
+}
+
+// IsBST checks if t is binary search tree
+func (t *TreeNode) IsBST() bool {
+	if t == nil {
+		return true
+	}
+
+	if t.Left != nil && t.Left.Val >= t.Val {
+		return false
+	}
+
+	if t.Right != nil && t.Right.Val <= t.Val {
+		return false
+	}
+
+	return t.Left.IsBST() && t.Right.IsBST()
+
+}
+
+// Leaves returns all leaves in binary tree
+func (t *TreeNode) Leaves() []int {
+	if t == nil {
+		return nil
+	}
+
+	if t.Left == nil && t.Right == nil {
+		return []int{t.Val}
+	}
+
+	return append(t.Left.Leaves(), t.Right.Leaves()...)
 }
 
 // New returns *TreeNode using simple method
@@ -295,6 +448,22 @@ func index(xs []int, x int) int {
 	}
 
 	return -1
+}
+
+// dedup
+func dedup(xs []int) []int {
+	if len(xs) == 0 {
+		return nil
+	}
+
+	ys := []int{xs[0]}
+	for _, x := range xs {
+		if x != ys[len(ys)-1] {
+			ys = append(ys, x)
+		}
+	}
+
+	return ys
 }
 
 // lines
